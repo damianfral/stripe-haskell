@@ -1,0 +1,45 @@
+name: build-project
+on: push
+#
+jobs:
+  build-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@main
+      - name: install nix
+        uses: cachix/install-nix-action@master
+      - uses: cachix/cachix-action@master
+        with:
+          name: opensource
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - env:
+          STRIPE_API_KEY: ${{secrets.STRIPE_API_KEY}}
+        run: |
+          nix build --accept-flake-config --impure --no-sandbox
+
+  build-dev-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@main
+      - name: install nix
+        uses: cachix/install-nix-action@master
+      - uses: cachix/cachix-action@master
+        with:
+          name: opensource
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - run: nix build .#devShells.x86_64-linux.default
+
+  flake-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@main
+      - name: install nix
+        uses: cachix/install-nix-action@master
+      - uses: cachix/cachix-action@master
+        with:
+          name: opensource
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - run: nix flake check
