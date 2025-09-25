@@ -5,16 +5,72 @@
 module StripeSpec (spec) where
 
 import qualified Data.Aeson as JSON
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import Relude
 import Stripe.Checkout
 import Stripe.Customer
 import Stripe.Event
 import Stripe.Subscription
+import Stripe.Webhook
 import Test.Syd
 import Test.Syd.Validity.Aeson (jsonSpec)
 
 spec :: Spec
 spec = do
+  describe "Stripe Webhook" $ do
+    let secret = StripeWebhookSecret "whsec_test_secret"
+        body = "{\"id\":\"evt_test\",\"object\":\"event\"}"
+
+    it "validates a correct signature" $ do
+      now <- liftIO getPOSIXTime
+      let timestamp = show @Text @Int $ round now
+          signature = computeSignature secret timestamp body
+          header = "t=" <> timestamp <> ",v1=" <> signature
+      liftIO (isValidSignature secret body header) `shouldReturn` True
+
+    it "rejects an incorrect signature" $ do
+      now <- liftIO getPOSIXTime
+      let timestamp = show @Text @Int $ round now
+          signature = "incorrect_signature"
+          header = "t=" <> timestamp <> ",v1=" <> signature
+      liftIO (isValidSignature secret body header) `shouldReturn` False
+
+    it "rejects a tampered request body" $ do
+      now <- liftIO getPOSIXTime
+      let timestamp = show @Text @Int $ round now
+          signature = computeSignature secret timestamp body
+          header = "t=" <> timestamp <> ",v1=" <> signature
+          tamperedBody = "{\"id\":\"evt_tampered\",\"object\":\"event\"}"
+      liftIO (isValidSignature secret tamperedBody header) `shouldReturn` False
+
+    it "rejects an expired timestamp" $ do
+      -- 5 minutes and 1 second ago
+      let expiredTimestamp = "1000000000"
+          signature = computeSignature secret expiredTimestamp body
+          header = "t=" <> expiredTimestamp <> ",v1=" <> signature
+      liftIO (isValidSignature secret body header) `shouldReturn` False
+
+    it "rejects a timestamp from the future" $ do
+      now <- liftIO getPOSIXTime
+      -- 5 minutes and 1 second in the future
+      let futureTimestamp = show @Text @Int (round now + 301)
+          signature = computeSignature secret futureTimestamp body
+          header = "t=" <> futureTimestamp <> ",v1=" <> signature
+      liftIO (isValidSignature secret body header) `shouldReturn` False
+
+    it "rejects a header without a timestamp" $ do
+      now <- liftIO getPOSIXTime
+      let timestamp = show @Text @Int $ round now
+          signature = computeSignature secret timestamp body
+          header = "v1=" <> signature
+      liftIO (isValidSignature secret body header) `shouldReturn` False
+
+    it "rejects a header without a signature" $ do
+      now <- liftIO getPOSIXTime
+      let timestamp = show @Text @Int $ round now
+          header = "t=" <> timestamp
+      liftIO (isValidSignature secret body header) `shouldReturn` False
+
   describe "Stripe Subscription" $ do
     jsonSpec @StripeSubscription
 

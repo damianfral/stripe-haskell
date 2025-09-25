@@ -9,7 +9,9 @@ dependencies:
   - aeson
   - aeson-casing
   - base
+  - case-insensitive
   - cryptonite
+  - crypto-api
   - generic-lens
   - genvalidity
   - genvalidity-containers
