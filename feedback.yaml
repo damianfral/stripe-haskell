@@ -1,0 +1,5 @@
+loops:
+  test:
+    command: |
+      hpack
+      cabal test
