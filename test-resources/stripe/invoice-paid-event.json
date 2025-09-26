@@ -1,0 +1,16 @@
+{
+  "id": "evt_invoice_paid_123",
+  "object": "event",
+  "api_version": "2020-08-27",
+  "created": 1617906177,
+  "type": "invoice.paid",
+  "data": {
+    "object": {
+      "id": "in_1IieGZLkdIwHu7ixOqXGqL4i",
+      "customer": "cus_NeZwdNtLEOXuvB",
+      "subscription": "sub_1MowQVLkdIwHu7ixeRlqHVzs",
+      "status": "paid",
+      "hosted_invoice_url": "https://invoice.stripe.com/i/acct_123/invst_ABC"
+    }
+  }
+}

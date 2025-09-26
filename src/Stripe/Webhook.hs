@@ -27,7 +27,9 @@ import Data.Kind
 import qualified Data.Map.Lazy as Map
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
-import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.Time (UTCTime)
+import Data.Time.Clock (getCurrentTime)
+import Data.Time.Clock.POSIX (POSIXTime, posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
 import Network.HTTP.Types (hContentType)
 import Network.Wai (lazyRequestBody, requestHeaders)
 import Relude
@@ -39,7 +41,6 @@ import Servant.Server.Internal.DelayedIO (delayedFail, delayedFailFatal, withReq
 import Servant.Server.Internal.ErrorFormatter
 import Stripe.Auth
 import Stripe.Event
-import Stripe.Subscription
 
 type WebhookSignatureHeader =
   Header' '[Required] "Stripe-Signature" StripeSignature
@@ -52,10 +53,8 @@ data
   deriving (Typeable)
 
 type StripeWebhookAPI =
-  "stripe"
-    :> "webhook"
-    :> WebhookSignatureHeader
-    :> StripeSignedReqBody '[Required] '[JSON] (StripeEvent StripeSubscription)
+  WebhookSignatureHeader
+    :> StripeSignedReqBody '[Required] '[JSON] StripeEvent
     :> Post '[JSON] NoContent
 
 newtype StripeWebhookSecret = StripeWebhookSecret {unStripeWebhookSecret :: Text}
@@ -123,10 +122,10 @@ instance
             delayedFailFatal
               err401 {errReasonPhrase = "Missing Stripe-Signature header"}
           Just sigHeader -> do
-            isValid <- do
+            isValidSig <- do
               let signatureHeader = decodeUtf8With lenientDecode sigHeader
               liftIO $ isValidSignature secret (toStrict body) signatureHeader
-            if isValid
+            if isValidSig
               then do
                 let mrqbody = f body
                 case sbool :: SBool (FoldLenient mods) of
@@ -152,17 +151,17 @@ isValidSignature secret body sigHeader = do
   let headerMap = parseSignatureHeader sigHeader
   case (Map.lookup "t" headerMap, Map.lookup "v1" headerMap) of
     (Just t, Just v1) -> do
-      now <- getPOSIXTime
+      now <- getCurrentTime
       let mTimestamp :: Maybe Int64 = readMaybe $ T.unpack t
       case mTimestamp of
         Nothing -> pure False
         Just timestamp ->
           -- Check if the timestamp is within the tolerance (e.g., 5 minutes)
-          if abs (round now - timestamp) > 300
+          if abs (round (utcTimeToPOSIXSeconds now) - timestamp) > 300
             then pure False
             -- Use a constant-time comparison function to prevent timing attacks
             else do
-              let expectedSignature = computeSignature secret t body
+              let expectedSignature = computeSignature secret (posixSecondsToUTCTime $ fromIntegral timestamp) body
               pure
                 $ constTimeEq (T.encodeUtf8 v1) (T.encodeUtf8 expectedSignature)
     _ -> pure False
@@ -175,9 +174,10 @@ parseSignatureHeader = Map.fromList . mapMaybe toPair . T.splitOn ","
       [k, v] -> Just (k, v)
       _ -> Nothing
 
-computeSignature :: StripeWebhookSecret -> Text -> ByteString -> Text
+computeSignature :: StripeWebhookSecret -> UTCTime -> ByteString -> Text
 computeSignature secret timestamp body =
-  let signedPayload = T.encodeUtf8 timestamp <> "." <> body
+  let posixTime :: POSIXTime = utcTimeToPOSIXSeconds timestamp
+      signedPayload = T.encodeUtf8 (show @Text @Int $ round posixTime) <> "." <> body
       secretBS = T.encodeUtf8 (unStripeWebhookSecret secret)
       digest = hmac secretBS signedPayload :: HMAC SHA256
    in decodeUtf8With lenientDecode $ convertToBase Base16 (hmacGetDigest digest)

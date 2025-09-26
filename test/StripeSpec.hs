@@ -5,11 +5,14 @@
 module StripeSpec (spec) where
 
 import qualified Data.Aeson as JSON
-import Data.Time.Clock.POSIX (getPOSIXTime)
+import Data.Time (getCurrentTime)
+import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
 import Relude
 import Stripe.Checkout
 import Stripe.Customer
 import Stripe.Event
+import Stripe.Event.Object
+import Stripe.Invoice
 import Stripe.Price as Price
 import Stripe.Product as Product
 import Stripe.Subscription
@@ -23,9 +26,9 @@ spec = do
   describe "Stripe Webhook" $ do
     it "validates a correct signature" $ forAllValid $ \(secret, obj) -> do
       let body = toStrict $ JSON.encode @JSON.Value obj
-      now <- liftIO getPOSIXTime
-      let timestamp = show @Text @Int $ round now
-          signature = computeSignature secret timestamp body
+      now <- liftIO getCurrentTime
+      let timestamp = show @Text @Int $ round $ utcTimeToPOSIXSeconds now
+          signature = computeSignature secret now body
           header = "t=" <> timestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` True
 
@@ -39,9 +42,9 @@ spec = do
 
     it "rejects a tampered request body" $ forAllValid $ \(secret, obj) -> do
       let body = toStrict $ JSON.encode @JSON.Value obj
-      now <- liftIO getPOSIXTime
-      let timestamp = show @Text @Int $ round now
-          signature = computeSignature secret timestamp body
+      now <- liftIO getCurrentTime
+      let timestamp = show @Text @Int $ round $ utcTimeToPOSIXSeconds now
+          signature = computeSignature secret now body
           header = "t=" <> timestamp <> ",v1=" <> signature
           tamperedBody = "{\"id\":\"evt_tampered\",\"object\":\"event\"}"
       liftIO (isValidSignature secret tamperedBody header) `shouldReturn` False
@@ -50,7 +53,7 @@ spec = do
       let body = toStrict $ JSON.encode @JSON.Value obj
       -- 5 minutes and 1 second ago
       let expiredTimestamp = "1000000000"
-          signature = computeSignature secret expiredTimestamp body
+          signature = computeSignature secret (posixSecondsToUTCTime 1000000000) body
           header = "t=" <> expiredTimestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
@@ -59,15 +62,14 @@ spec = do
       now <- liftIO getPOSIXTime
       -- 5 minutes and 1 second in the future
       let futureTimestamp = show @Text @Int (round now + 301)
-          signature = computeSignature secret futureTimestamp body
+          signature = computeSignature secret (posixSecondsToUTCTime $ now + 301) body
           header = "t=" <> futureTimestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
     it "rejects a header without a timestamp" $ forAllValid $ \(secret, obj) -> do
       let body = toStrict $ JSON.encode @JSON.Value obj
-      now <- liftIO getPOSIXTime
-      let timestamp = show @Text @Int $ round now
-          signature = computeSignature secret timestamp body
+      now <- liftIO getCurrentTime
+      let signature = computeSignature secret now body
           header = "v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
@@ -113,19 +115,61 @@ spec = do
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
 
+  describe "StripeInvoice" $ do
+    jsonSpec @StripeInvoice
+
   describe "StripeEvent" $ do
-    it "can decode the sample JSON event" $ do
+    jsonSpec @StripeEvent
+
+    it "can decode the sample subscription created event" $ do
       let filepath = "test-resources/stripe/subscription-event.json"
       let expected =
             StripeEvent
               { stripeEventId = "evt_1NG8Du2eZvKYlo2CUI79vXWy",
                 stripeEventType = "customer.subscription.created",
                 stripeEventObject =
-                  StripeSubscription
-                    { stripeSubscriptionCustomer = StripeCustomerID "cus_Na6dX7aXxi11N4",
-                      stripeSubscriptionId = StripeSubscriptionID "sub_1MowQVLkdIwHu7ixeRlqHVzs",
-                      stripeSubscriptionStatus = SubscriptionStatusActive
-                    }
+                  CustomerSubscriptionCreated
+                    StripeSubscription
+                      { stripeSubscriptionCustomer = StripeCustomerID "cus_Na6dX7aXxi11N4",
+                        stripeSubscriptionId = StripeSubscriptionID "sub_1MowQVLkdIwHu7ixeRlqHVzs",
+                        stripeSubscriptionStatus = SubscriptionStatusActive
+                      }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+    it "can decode the sample invoice paid event" $ do
+      let filepath = "test-resources/stripe/invoice-paid-event.json"
+      let expected =
+            StripeEvent
+              { stripeEventId = "evt_invoice_paid_123",
+                stripeEventType = "invoice.paid",
+                stripeEventObject =
+                  InvoicePaid
+                    StripeInvoice
+                      { stripeInvoiceId = StripeInvoiceID "in_1IieGZLkdIwHu7ixOqXGqL4i",
+                        stripeInvoiceCustomer = StripeCustomerID "cus_NeZwdNtLEOXuvB",
+                        stripeInvoiceSubscription = Just (StripeSubscriptionID "sub_1MowQVLkdIwHu7ixeRlqHVzs"),
+                        stripeInvoiceStatus = InvoiceStatusPaid,
+                        stripeInvoiceHostedInvoiceUrl = Just "https://invoice.stripe.com/i/acct_123/invst_ABC"
+                      }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+    it "can decode the sample invoice payment failed event" $ do
+      let filepath = "test-resources/stripe/invoice-payment-failed-event.json"
+      let expected =
+            StripeEvent
+              { stripeEventId = "evt_invoice_payment_failed_123",
+                stripeEventType = "invoice.payment_failed",
+                stripeEventObject =
+                  InvoicePaymentFailed
+                    StripeInvoice
+                      { stripeInvoiceId = StripeInvoiceID "in_1IieGZLkdIwHu7ixOqXGqL4j",
+                        stripeInvoiceCustomer = StripeCustomerID "cus_NeZwdNtLEOXuvB",
+                        stripeInvoiceSubscription = Just (StripeSubscriptionID "sub_1MowQVLkdIwHu7ixeRlqHVzs"),
+                        stripeInvoiceStatus = InvoiceStatusOpen,
+                        stripeInvoiceHostedInvoiceUrl = Just "https://invoice.stripe.com/i/acct_123/invst_DEF"
+                      }
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
 
