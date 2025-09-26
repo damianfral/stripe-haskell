@@ -10,6 +10,8 @@ import Relude
 import Stripe.Checkout
 import Stripe.Customer
 import Stripe.Event
+import Stripe.Price as Price
+import Stripe.Product as Product
 import Stripe.Subscription
 import Stripe.Webhook
 import Test.Syd
@@ -119,5 +121,67 @@ spec = do
                       stripeSubscriptionId = StripeSubscriptionID "sub_1MowQVLkdIwHu7ixeRlqHVzs",
                       stripeSubscriptionStatus = SubscriptionStatusActive
                     }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+  describe "StripeProduct" $ do
+    jsonSpec @StripeProduct
+
+    it "can decode a JSON object" $ do
+      let filepath = "test-resources/stripe/product.json"
+      let expected =
+            StripeProduct
+              { stripeProductId = StripeProductID "prod_NWjs8kKbJWmuuc",
+                stripeProductName = "Gold Plan",
+                stripeProductActive = True,
+                stripeProductCreated = 1678833149,
+                stripeProductUpdated = 1678833149,
+                stripeProductDescription = Nothing,
+                stripeProductDefaultPrice = Nothing,
+                stripeProductImages = [],
+                stripeProductLivemode = False,
+                stripeProductMetadata = mempty,
+                stripeProductPackageDimensions = Nothing,
+                stripeProductShippable = Nothing,
+                stripeProductStatementDescriptor = Nothing,
+                stripeProductTaxCode = Nothing,
+                stripeProductUnitLabel = Nothing,
+                stripeProductUrl = Nothing
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+  describe "StripePrice" $ do
+    jsonSpec @StripePrice
+
+    it "can decode a JSON object" $ do
+      let filepath = "test-resources/stripe/price.json"
+      let expected =
+            StripePrice
+              { stripePriceId = StripePriceID "price_1MoBy5LkdIwHu7ixZhnattbh",
+                stripePriceActive = True,
+                stripePriceCurrency = "usd",
+                stripePriceMetadata = mempty,
+                stripePriceNickname = Nothing,
+                stripePriceProduct = StripeProductID "prod_NZKdYqrwEYx6iK",
+                stripePriceRecurring =
+                  Just
+                    $ fromList
+                      [ ("aggregate_usage", JSON.Null),
+                        ("interval", "month"),
+                        ("interval_count", JSON.Number 1.0),
+                        ("trial_period_days", JSON.Null),
+                        ("usage_type", "licensed")
+                      ],
+                stripePriceTaxBehavior = Just "unspecified",
+                stripePriceObject = "price",
+                stripePriceBillingScheme = "per_unit",
+                stripePriceCreated = 1679431181,
+                stripePriceLivemode = False,
+                stripePriceLookupKey = Nothing,
+                stripePriceTiersMode = Nothing,
+                stripePriceTransformQuantity = Nothing,
+                stripePricePriceType = "recurring",
+                stripePriceUnitAmount = Just 1000,
+                stripePriceUnitAmountDecimal = Just "1000"
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)

@@ -13,12 +13,16 @@ import Servant.Client
 import Stripe.Auth
 import Stripe.Checkout
 import Stripe.Customer
+import Stripe.Price
+import Stripe.Product
 import Stripe.Subscription
 
 type StripeAPI =
   StripeCheckoutAPI
     :<|> StripeCustomersAPI
     :<|> StripeSubscriptionsAPI
+    :<|> StripeProductsAPI
+    :<|> StripePricesAPI
 
 stripeAPI :: Proxy StripeAPI
 stripeAPI = Proxy
@@ -33,10 +37,19 @@ createStripeSubscriptionClient ::
   StripeAPIKey -> CreateSubscription -> ClientM StripeSubscription
 deleteStripeSubscriptionClient ::
   StripeAPIKey -> StripeSubscriptionID -> ClientM StripeSubscription
+createStripeProductClient ::
+  StripeAPIKey -> CreateProduct -> ClientM StripeProduct
+getStripeProductClient ::
+  StripeAPIKey -> StripeProductID -> ClientM StripeProduct
+-- createStripePriceClient ::
+--   StripeAPIKey -> CreatePrice -> ClientM StripePrice
+-- getStripePriceClient ::
+--   StripeAPIKey -> StripePriceID -> ClientM StripePrice
 ( createStripeCheckoutSessionClient
     :<|> createStripeCustomerClient
-    :<|> createStripeSubscriptionClient
-    :<|> deleteStripeSubscriptionClient
+    :<|> (createStripeSubscriptionClient :<|> deleteStripeSubscriptionClient)
+    :<|> (createStripeProductClient :<|> getStripeProductClient)
+    :<|> (createStripePriceClient :<|> getStripePriceClient)
   ) = client stripeAPI
 
 newtype StripeError = StripeError {unStripeError :: ClientError}
@@ -73,6 +86,34 @@ createStripeCustomer ::
   m (Either StripeError StripeCustomer)
 createStripeCustomer params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (createStripeCustomerClient auth params) env
+
+createStripeProduct ::
+  (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
+  CreateProduct ->
+  m (Either StripeError StripeProduct)
+createStripeProduct params = withStripeAuth $ \(env, auth) ->
+  liftIO $ runClientM (createStripeProductClient auth params) env
+
+getStripeProduct ::
+  (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
+  StripeProductID ->
+  m (Either StripeError StripeProduct)
+getStripeProduct pid = withStripeAuth $ \(env, auth) ->
+  liftIO $ runClientM (getStripeProductClient auth pid) env
+
+createStripePrice ::
+  (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
+  CreatePrice ->
+  m (Either StripeError StripePrice)
+createStripePrice params = withStripeAuth $ \(env, auth) ->
+  liftIO $ runClientM (createStripePriceClient auth params) env
+
+getStripePrice ::
+  (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
+  StripePriceID ->
+  m (Either StripeError StripePrice)
+getStripePrice pid = withStripeAuth $ \(env, auth) ->
+  liftIO $ runClientM (getStripePriceClient auth pid) env
 
 withStripeAuth ::
   ( MonadReader r m,

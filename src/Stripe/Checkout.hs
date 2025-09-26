@@ -68,28 +68,42 @@ data CreateCheckoutSession = CreateCheckoutSession
   { successUrl :: Text,
     cancelUrl :: Text,
     mode :: CheckoutMode,
-    lineItems :: LineItem,
-    customerId :: StripeCustomerID
+    lineItems :: [LineItem],
+    -- | The ID of an existing Customer to use for this Session.
+    -- If none is provided, a new Customer will be created.
+    customerId :: Maybe StripeCustomerID,
+    -- | The ID of the subscription to update.
+    subscription :: Maybe Text
   }
   deriving (Show, Generic)
 
 instance ToJSON CreateCheckoutSession where
-  toJSON = genericToJSON $ customOptionsSnake ""
+  toJSON = genericToJSON (customOptionsSnake "") {omitNothingFields = True}
+
+lineItemsToForm :: [LineItem] -> [(Text, Text)]
+lineItemsToForm items =
+  concat
+    $ zipWith
+      ( \i LineItem {..} ->
+          [ ("line_items[" <> show i <> "][price]", toQueryParam price),
+            ("line_items[" <> show i <> "][quantity]", toQueryParam quantity)
+          ]
+      )
+      [0 :: Int ..]
+      items
 
 instance ToForm CreateCheckoutSession where
   toForm CreateCheckoutSession {..} =
     [ ("success_url", successUrl),
       ("cancel_url", cancelUrl),
-      ("mode", toQueryParam mode),
-      ("customer", toQueryParam customerId)
+      ("mode", toQueryParam mode)
     ]
+      <> maybe [] (\cid -> [("customer", toQueryParam cid)]) customerId
+      <> maybe [] (\sub -> [("subscription", sub)]) subscription
       -- Tricky
       <> case mode of
         CheckoutSetup -> [("currency", "USD")]
-        _ ->
-          [ ("line_items[0][price]", toQueryParam $ price lineItems),
-            ("line_items[0][quantity]", toQueryParam $ quantity lineItems)
-          ]
+        _ -> toForm $ lineItemsToForm lineItems
 
 data CheckoutSession = CheckoutSession
   { checkoutSessionId :: CheckoutSessionID,
