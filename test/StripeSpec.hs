@@ -15,29 +15,30 @@ import Stripe.Product as Product
 import Stripe.Subscription
 import Stripe.Webhook
 import Test.Syd
+import Test.Syd.Validity (forAllValid)
 import Test.Syd.Validity.Aeson (jsonSpec)
 
 spec :: Spec
 spec = do
   describe "Stripe Webhook" $ do
-    let secret = StripeWebhookSecret "whsec_test_secret"
-        body = "{\"id\":\"evt_test\",\"object\":\"event\"}"
-
-    it "validates a correct signature" $ do
+    it "validates a correct signature" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       now <- liftIO getPOSIXTime
       let timestamp = show @Text @Int $ round now
           signature = computeSignature secret timestamp body
           header = "t=" <> timestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` True
 
-    it "rejects an incorrect signature" $ do
+    it "rejects an incorrect signature" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       now <- liftIO getPOSIXTime
       let timestamp = show @Text @Int $ round now
           signature = "incorrect_signature"
           header = "t=" <> timestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
-    it "rejects a tampered request body" $ do
+    it "rejects a tampered request body" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       now <- liftIO getPOSIXTime
       let timestamp = show @Text @Int $ round now
           signature = computeSignature secret timestamp body
@@ -45,14 +46,16 @@ spec = do
           tamperedBody = "{\"id\":\"evt_tampered\",\"object\":\"event\"}"
       liftIO (isValidSignature secret tamperedBody header) `shouldReturn` False
 
-    it "rejects an expired timestamp" $ do
+    it "rejects an expired timestamp" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       -- 5 minutes and 1 second ago
       let expiredTimestamp = "1000000000"
           signature = computeSignature secret expiredTimestamp body
           header = "t=" <> expiredTimestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
-    it "rejects a timestamp from the future" $ do
+    it "rejects a timestamp from the future" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       now <- liftIO getPOSIXTime
       -- 5 minutes and 1 second in the future
       let futureTimestamp = show @Text @Int (round now + 301)
@@ -60,14 +63,16 @@ spec = do
           header = "t=" <> futureTimestamp <> ",v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
-    it "rejects a header without a timestamp" $ do
+    it "rejects a header without a timestamp" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       now <- liftIO getPOSIXTime
       let timestamp = show @Text @Int $ round now
           signature = computeSignature secret timestamp body
           header = "v1=" <> signature
       liftIO (isValidSignature secret body header) `shouldReturn` False
 
-    it "rejects a header without a signature" $ do
+    it "rejects a header without a signature" $ forAllValid $ \(secret, obj) -> do
+      let body = toStrict $ JSON.encode @JSON.Value obj
       now <- liftIO getPOSIXTime
       let timestamp = show @Text @Int $ round now
           header = "t=" <> timestamp
@@ -76,7 +81,7 @@ spec = do
   describe "Stripe Subscription" $ do
     jsonSpec @StripeSubscription
 
-    it "can decode a JSON object" $ do
+    it "can decode the sample JSON object" $ do
       let filepath = "test-resources/stripe/subscription.json"
       let expected =
             StripeSubscription
@@ -89,7 +94,7 @@ spec = do
   describe "Stripe Customer" $ do
     jsonSpec @StripeCustomer
 
-    it "can decode a JSON object" $ do
+    it "can decode the sample JSON object" $ do
       let filepath = "test-resources/stripe/customer.json"
       let expected = StripeCustomer $ StripeCustomerID "cus_NffrFeUfNV2Hib"
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
@@ -97,7 +102,7 @@ spec = do
   describe "Stripe Checkout Session" $ do
     jsonSpec @CheckoutSession
 
-    it "can decode a JSON object" $ do
+    it "can decode the sample JSON object" $ do
       let filepath = "test-resources/stripe/checkout-session.json"
       let expected =
             CheckoutSession
@@ -109,7 +114,7 @@ spec = do
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
 
   describe "StripeEvent" $ do
-    it "can decode a JSON event" $ do
+    it "can decode the sample JSON event" $ do
       let filepath = "test-resources/stripe/subscription-event.json"
       let expected =
             StripeEvent
@@ -127,7 +132,7 @@ spec = do
   describe "StripeProduct" $ do
     jsonSpec @StripeProduct
 
-    it "can decode a JSON object" $ do
+    it "can decode the sample JSON object" $ do
       let filepath = "test-resources/stripe/product.json"
       let expected =
             StripeProduct
@@ -153,7 +158,7 @@ spec = do
   describe "StripePrice" $ do
     jsonSpec @StripePrice
 
-    it "can decode a JSON object" $ do
+    it "can decode the sample JSON object" $ do
       let filepath = "test-resources/stripe/price.json"
       let expected =
             StripePrice

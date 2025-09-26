@@ -22,6 +22,7 @@ import Data.Aeson
 import Data.ByteArray.Encoding (Base (Base16), convertToBase)
 import qualified Data.CaseInsensitive as CI
 import Data.Data (typeRep)
+import Data.GenValidity
 import Data.Kind
 import qualified Data.Map.Lazy as Map
 import qualified Data.Text as T
@@ -61,6 +62,10 @@ newtype StripeWebhookSecret = StripeWebhookSecret {unStripeWebhookSecret :: Text
   deriving (Show, Eq, Generic)
   deriving newtype (FromJSON, ToJSON)
   deriving newtype (FromHttpApiData, ToHttpApiData)
+
+instance GenValid StripeWebhookSecret
+
+instance Validity StripeWebhookSecret
 
 instance
   ( AllCTUnrender list a,
