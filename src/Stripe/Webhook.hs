@@ -53,8 +53,7 @@ data
   deriving (Typeable)
 
 type StripeWebhookAPI =
-  WebhookSignatureHeader
-    :> StripeSignedReqBody '[Required] '[JSON] StripeEvent
+  StripeSignedReqBody '[Required] '[JSON] StripeEvent
     :> Post '[JSON] NoContent
 
 newtype StripeWebhookSecret = StripeWebhookSecret {unStripeWebhookSecret :: Text}
