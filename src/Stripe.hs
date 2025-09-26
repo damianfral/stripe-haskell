@@ -41,10 +41,10 @@ createStripeProductClient ::
   StripeAPIKey -> CreateProduct -> ClientM StripeProduct
 getStripeProductClient ::
   StripeAPIKey -> StripeProductID -> ClientM StripeProduct
--- createStripePriceClient ::
---   StripeAPIKey -> CreatePrice -> ClientM StripePrice
--- getStripePriceClient ::
---   StripeAPIKey -> StripePriceID -> ClientM StripePrice
+createStripePriceClient ::
+  StripeAPIKey -> CreatePrice -> ClientM StripePrice
+getStripePriceClient ::
+  StripeAPIKey -> StripePriceID -> ClientM StripePrice
 ( createStripeCheckoutSessionClient
     :<|> createStripeCustomerClient
     :<|> (createStripeSubscriptionClient :<|> deleteStripeSubscriptionClient)
