@@ -38,16 +38,6 @@ dependencies:
 
 library:
   source-dirs: ./src/
-  exposed-modules:
-    - Stripe
-    - Stripe.Auth
-    - Stripe.Checkout
-    - Stripe.Customer
-    - Stripe.Event
-    - Stripe.Subscription
-    - Stripe.Webhook
-    - Stripe.Product
-    - Stripe.Price
 
 ghc-options:
   - -fwrite-ide-info
