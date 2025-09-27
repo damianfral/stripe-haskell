@@ -5,14 +5,14 @@
 module StripeSpec (spec) where
 
 import qualified Data.Aeson as JSON
-import Data.Time (getCurrentTime)
-import Data.Time.Clock.POSIX (getPOSIXTime, posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
+import Data.Time.Clock.POSIX
 import Relude
 import Stripe.Checkout
 import Stripe.Customer
 import Stripe.Event
 import Stripe.Event.Object
 import Stripe.Invoice
+import Stripe.PaymentIntent
 import Stripe.Price as Price
 import Stripe.Product as Product
 import Stripe.Subscription
@@ -111,7 +111,8 @@ spec = do
               { checkoutSessionId = CheckoutSessionID "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
                 checkoutSessionCustomer = StripeCustomerID "cus_Na6dX7aXxi11N4",
                 checkoutSessionPaymentStatus = Unpaid,
-                checkoutSessionUrl = Just "https://checkout.stripe.com/c/pay/cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u#fidkdWxOYHwnPyd1blpxYHZxWjA0SDdPUW5JbmFMck1wMmx9N2BLZjFEfGRUNWhqTmJ%2FM2F8bUA2SDRySkFdUV81T1BSV0YxcWJcTUJcYW5rSzN3dzBLPUE0TzRKTTxzNFBjPWZEX1NKSkxpNTVjRjN8VHE0YicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl"
+                checkoutSessionUrl = Just "https://checkout.stripe.com/c/pay/cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u#fidkdWxOYHwnPyd1blpxYHZxWjA0SDdPUW5JbmFMck1wMmx9N2BLZjFEfGRUNWhqTmJ%2FM2F8bUA2SDRySkFdUV81T1BSV0YxcWJcTUJcYW5rSzN3dzBLPUE0TzRKTTxzNFBjPWZEX1NKSkxpNTVjRjN8VHE0YicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl",
+                checkoutSessionPaymentIntent = Nothing
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
 
@@ -166,6 +167,80 @@ spec = do
                         stripeInvoiceSubscription = Just (StripeSubscriptionID "sub_1MowQVLkdIwHu7ixeRlqHVzs"),
                         stripeInvoiceStatus = InvoiceStatusOpen,
                         stripeInvoiceHostedInvoiceUrl = Just "https://invoice.stripe.com/i/acct_123/invst_DEF"
+                      }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+    it "can decode the sample checkout session completed event" $ do
+      let filepath = "test-resources/stripe/checkout-session-completed-event.json"
+      let expected =
+            StripeEvent
+              { stripeEventId = "evt_1PzcFJBBAD3j0rJ3gX5X4Y8j",
+                stripeEventObject =
+                  CheckoutSessionCompleted
+                    CheckoutSession
+                      { checkoutSessionId = CheckoutSessionID "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+                        checkoutSessionCustomer = StripeCustomerID "cus_Na6dX7aXxi11N4",
+                        checkoutSessionPaymentStatus = Paid,
+                        checkoutSessionUrl = Nothing,
+                        checkoutSessionPaymentIntent = Just (PaymentIntentID "pi_3MtwBwLkdIwHu7ix28a3tqPa")
+                      }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+    it "can decode the sample payment intent succeeded event" $ do
+      let filepath = "test-resources/stripe/payment-intent-succeeded-event.json"
+      let expected =
+            StripeEvent
+              { stripeEventId = "evt_3PzcgaBBAD3j0rJ31Z3X4Y8j",
+                stripeEventObject =
+                  PaymentIntentSucceeded
+                    PaymentIntent
+                      { paymentIntentId = PaymentIntentID "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+                        paymentIntentAmount = 2000,
+                        paymentIntentCurrency = "usd",
+                        paymentIntentStatus = Succeeded,
+                        paymentIntentClientSecret = Just "pi_3MtwBwLkdIwHu7ix28a3tqPa_secret_YrKJUKribcBjcG8HVhfZluoGH",
+                        paymentIntentLastPaymentError = Nothing,
+                        paymentIntentCustomer = Nothing
+                      }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+    it "can decode the sample payment intent payment failed event" $ do
+      let filepath = "test-resources/stripe/payment-intent-payment-failed-event.json"
+      let expected =
+            StripeEvent
+              { stripeEventId = "evt_3PzcgbBBAD3j0rJ31Z3X4Y8j",
+                stripeEventObject =
+                  PaymentIntentPaymentFailed
+                    PaymentIntent
+                      { paymentIntentId = PaymentIntentID "pi_3MtwBwLkdIwHu7ix28a3tqPb",
+                        paymentIntentAmount = 2000,
+                        paymentIntentCurrency = "usd",
+                        paymentIntentStatus = RequiresPaymentMethod,
+                        paymentIntentClientSecret = Just "pi_3MtwBwLkdIwHu7ix28a3tqPb_secret_YrKJUKribcBjcG8HVhfZluoGI",
+                        paymentIntentLastPaymentError = Just (PaymentError "Your card was declined."),
+                        paymentIntentCustomer = Nothing
+                      }
+              }
+      JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
+
+    it "can decode the sample payment intent succeeded with customer event" $ do
+      let filepath = "test-resources/stripe/payment-intent-succeeded-with-customer-event.json"
+      let expected =
+            StripeEvent
+              { stripeEventId = "evt_3Pzd1mBBAD3j0rJ31Z3X4Y8k",
+                stripeEventObject =
+                  PaymentIntentSucceeded
+                    PaymentIntent
+                      { paymentIntentId = PaymentIntentID "pi_3MtwBwLkdIwHu7ix28a3tqPc",
+                        paymentIntentAmount = 2000,
+                        paymentIntentCurrency = "usd",
+                        paymentIntentStatus = Succeeded,
+                        paymentIntentClientSecret = Just "pi_3MtwBwLkdIwHu7ix28a3tqPc_secret_YrKJUKribcBjcG8HVhfZluoGJ",
+                        paymentIntentLastPaymentError = Nothing,
+                        paymentIntentCustomer = Just (StripeCustomerID "cus_Na6dX7aXxi11N4")
                       }
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)

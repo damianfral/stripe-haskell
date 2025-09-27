@@ -9,6 +9,7 @@ import Data.GenValidity.Aeson ()
 import Relude
 import Stripe.Checkout
 import Stripe.Invoice
+import Stripe.PaymentIntent
 import Stripe.Subscription
 import Test.QuickCheck.Gen (oneof)
 
@@ -30,6 +31,12 @@ data StripeEventObject
     InvoicePaid StripeInvoice
   | -- | Occurs whenever an invoice payment attempt fails.
     InvoicePaymentFailed StripeInvoice
+  | -- | Occurs when a new PaymentIntent is created.
+    PaymentIntentCreated PaymentIntent
+  | -- | Occurs when a PaymentIntent has successfully completed payment.
+    PaymentIntentSucceeded PaymentIntent
+  | -- | Occurs when a PaymentIntent has failed the attempt to create a source or a charge from a source.
+    PaymentIntentPaymentFailed PaymentIntent
   deriving (Generic, Show, Eq)
 
 instance ToJSON StripeEventObject where
@@ -39,6 +46,9 @@ instance ToJSON StripeEventObject where
   toJSON (CustomerSubscriptionDeleted o) = toJSON o
   toJSON (InvoicePaid o) = toJSON o
   toJSON (InvoicePaymentFailed o) = toJSON o
+  toJSON (PaymentIntentCreated o) = toJSON o
+  toJSON (PaymentIntentSucceeded o) = toJSON o
+  toJSON (PaymentIntentPaymentFailed o) = toJSON o
 
 instance Validity StripeEventObject
 
@@ -50,5 +60,8 @@ instance GenValid StripeEventObject where
         CustomerSubscriptionUpdated <$> genValid,
         CustomerSubscriptionDeleted <$> genValid,
         InvoicePaid <$> genValid,
-        InvoicePaymentFailed <$> genValid
+        InvoicePaymentFailed <$> genValid,
+        PaymentIntentCreated <$> genValid,
+        PaymentIntentSucceeded <$> genValid,
+        PaymentIntentPaymentFailed <$> genValid
       ]

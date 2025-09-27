@@ -21,6 +21,7 @@ import Relude
 import Servant.API
 import Stripe.Auth
 import Stripe.Customer
+import Stripe.PaymentIntent (PaymentIntentID)
 import Web.FormUrlEncoded
 
 -- | The mode of the Checkout Session.
@@ -127,7 +128,8 @@ data CheckoutSession = CheckoutSession
   { checkoutSessionId :: CheckoutSessionID,
     checkoutSessionCustomer :: StripeCustomerID,
     checkoutSessionPaymentStatus :: PaymentStatus,
-    checkoutSessionUrl :: Maybe Text
+    checkoutSessionUrl :: Maybe Text,
+    checkoutSessionPaymentIntent :: Maybe PaymentIntentID
   }
   deriving (Show, Generic, Eq)
 
