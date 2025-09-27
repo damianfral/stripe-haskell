@@ -19,7 +19,6 @@ data StripeEventObject
   | CustomerSubscriptionDeleted StripeSubscription
   | InvoicePaid StripeInvoice
   | InvoicePaymentFailed StripeInvoice
-  | Other Value
   deriving (Generic, Show, Eq)
 
 instance ToJSON StripeEventObject where
@@ -29,7 +28,6 @@ instance ToJSON StripeEventObject where
   toJSON (CustomerSubscriptionDeleted o) = toJSON o
   toJSON (InvoicePaid o) = toJSON o
   toJSON (InvoicePaymentFailed o) = toJSON o
-  toJSON (Other o) = o
 
 instance Validity StripeEventObject
 
@@ -41,6 +39,5 @@ instance GenValid StripeEventObject where
         CustomerSubscriptionUpdated <$> genValid,
         CustomerSubscriptionDeleted <$> genValid,
         InvoicePaid <$> genValid,
-        InvoicePaymentFailed <$> genValid,
-        Other <$> genValid
+        InvoicePaymentFailed <$> genValid
       ]

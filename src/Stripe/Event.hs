@@ -13,7 +13,6 @@ import Test.QuickCheck.Gen (oneof)
 
 data StripeEvent = StripeEvent
   { stripeEventId :: Text,
-    stripeEventType :: Text,
     stripeEventObject :: StripeEventObject
   }
   deriving (Generic, Show, Eq)
@@ -31,14 +30,20 @@ instance FromJSON StripeEvent where
       "customer.subscription.deleted" -> CustomerSubscriptionDeleted <$> parseJSON obj
       "invoice.paid" -> InvoicePaid <$> parseJSON obj
       "invoice.payment_failed" -> InvoicePaymentFailed <$> parseJSON obj
-      _ -> pure $ Other obj
-    pure $ StripeEvent eId eType eObject
+      str -> fail $ "Could not parse StripeEvent.type " <> toString str
+    pure $ StripeEvent eId eObject
 
 instance ToJSON StripeEvent where
   toJSON event =
     object
       [ "id" .= stripeEventId event,
-        "type" .= stripeEventType event,
+        "type" .= case stripeEventObject event of
+          CheckoutSessionCompleted _ -> "checkout.session.completed"
+          CustomerSubscriptionCreated _ -> "customer.subscription.created"
+          CustomerSubscriptionUpdated _ -> "customer.subscription.updated"
+          CustomerSubscriptionDeleted _ -> "customer.subscription.deleted"
+          InvoicePaid _ -> "invoice.paid" :: Text
+          InvoicePaymentFailed _ -> "invoice.payment_failed",
         "data" .= object ["object" .= stripeEventObject event]
       ]
 
@@ -47,29 +52,13 @@ instance Validity StripeEvent
 instance GenValid StripeEvent where
   genValid = do
     stripeEventId <- genValid
-    (stripeEventType, stripeEventObject) <-
+    stripeEventObject <-
       oneof
-        [ do
-            o <- genValid
-            pure ("checkout.session.completed", CheckoutSessionCompleted o),
-          do
-            o <- genValid
-            pure ("customer.subscription.created", CustomerSubscriptionCreated o),
-          do
-            o <- genValid
-            pure ("customer.subscription.updated", CustomerSubscriptionUpdated o),
-          do
-            o <- genValid
-            pure ("customer.subscription.deleted", CustomerSubscriptionDeleted o),
-          do
-            o <- genValid
-            pure ("invoice.paid", InvoicePaid o),
-          do
-            o <- genValid
-            pure ("invoice.payment_failed", InvoicePaymentFailed o),
-          do
-            o <- genValid
-            -- Any other event type will be parsed as 'Other'
-            pure ("some.other.event", Other o)
+        [ CheckoutSessionCompleted <$> genValid,
+          CustomerSubscriptionCreated <$> genValid,
+          CustomerSubscriptionUpdated <$> genValid,
+          CustomerSubscriptionDeleted <$> genValid,
+          InvoicePaid <$> genValid,
+          InvoicePaymentFailed <$> genValid
         ]
     pure StripeEvent {..}

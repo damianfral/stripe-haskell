@@ -126,7 +126,6 @@ spec = do
       let expected =
             StripeEvent
               { stripeEventId = "evt_1NG8Du2eZvKYlo2CUI79vXWy",
-                stripeEventType = "customer.subscription.created",
                 stripeEventObject =
                   CustomerSubscriptionCreated
                     StripeSubscription
@@ -142,7 +141,6 @@ spec = do
       let expected =
             StripeEvent
               { stripeEventId = "evt_invoice_paid_123",
-                stripeEventType = "invoice.paid",
                 stripeEventObject =
                   InvoicePaid
                     StripeInvoice
@@ -160,7 +158,6 @@ spec = do
       let expected =
             StripeEvent
               { stripeEventId = "evt_invoice_payment_failed_123",
-                stripeEventType = "invoice.payment_failed",
                 stripeEventObject =
                   InvoicePaymentFailed
                     StripeInvoice
