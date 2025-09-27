@@ -12,13 +12,24 @@ import Stripe.Invoice
 import Stripe.Subscription
 import Test.QuickCheck.Gen (oneof)
 
+-- | This object contains the API resource relevant to the event. For example, an
+-- | `invoice.created` event will have a full invoice object as the value of the
+-- | object key.
+-- |
+-- | <https://docs.stripe.com/api/events/object#event_object-data-object>
 data StripeEventObject
-  = CheckoutSessionCompleted CheckoutSession
-  | CustomerSubscriptionCreated StripeSubscription
-  | CustomerSubscriptionUpdated StripeSubscription
-  | CustomerSubscriptionDeleted StripeSubscription
-  | InvoicePaid StripeInvoice
-  | InvoicePaymentFailed StripeInvoice
+  = -- | Occurs when a Checkout Session has been successfully completed.
+    CheckoutSessionCompleted CheckoutSession
+  | -- | Occurs whenever a customer is signed up for a new subscription.
+    CustomerSubscriptionCreated StripeSubscription
+  | -- | Occurs whenever a subscription changes.
+    CustomerSubscriptionUpdated StripeSubscription
+  | -- | Occurs whenever a customer's subscription ends.
+    CustomerSubscriptionDeleted StripeSubscription
+  | -- | Occurs whenever an invoice is paid.
+    InvoicePaid StripeInvoice
+  | -- | Occurs whenever an invoice payment attempt fails.
+    InvoicePaymentFailed StripeInvoice
   deriving (Generic, Show, Eq)
 
 instance ToJSON StripeEventObject where

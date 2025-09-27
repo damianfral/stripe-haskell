@@ -27,6 +27,9 @@ import Servant
 import Stripe.Auth (StripeAuthHeader)
 import Web.FormUrlEncoded (ToForm (..), toForm)
 
+-- | The ID of a Stripe Product.
+--
+-- <https://docs.stripe.com/api/products/object#product_object-id>
 newtype StripeProductID = StripeProductID {unStripeProductID :: Text}
   deriving stock (Show, Eq, Generic)
   deriving newtype (FromJSON, ToJSON, ToHttpApiData)
@@ -35,6 +38,9 @@ instance Validity StripeProductID
 
 instance GenValid StripeProductID
 
+-- | The dimensions of a product package.
+--
+-- <https://docs.stripe.com/api/products/object#product_object-package_dimensions>
 data PackageDimensions = PackageDimensions
   { packageDimensionsHeight :: Double,
     packageDimensionsWidth :: Double,
@@ -75,6 +81,10 @@ instance ToJSON PackageDimensions where
         }
 
 -- https://stripe.com/docs/api/products/object
+
+-- | The Stripe Product object.
+--
+-- <https://docs.stripe.com/api/products/object>
 data StripeProduct = StripeProduct
   { stripeProductId :: StripeProductID,
     stripeProductName :: Text,
@@ -112,7 +122,9 @@ instance ToJSON StripeProduct where
             snakeCase . drop (length @[] "StripeProduct")
         }
 
--- https://stripe.com/docs/api/products/create
+-- | Parameters for creating a Product.
+--
+-- <https://docs.stripe.com/api/products/create>
 data CreateProduct = CreateProduct
   { createProductName :: Text,
     createProductActive :: Maybe Bool,

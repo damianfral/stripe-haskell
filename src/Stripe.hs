@@ -55,6 +55,9 @@ getStripePriceClient ::
 newtype StripeError = StripeError {unStripeError :: ClientError}
   deriving (Generic, Show)
 
+-- | Create a stripe checkout session
+--
+-- <https://docs.stripe.com/api/checkout/sessions/create>
 createStripeCheckoutSession ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   CreateCheckoutSession ->
@@ -62,6 +65,9 @@ createStripeCheckoutSession ::
 createStripeCheckoutSession params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (createStripeCheckoutSessionClient auth params) env
 
+-- | Create a stripe subscription
+--
+-- <https://docs.stripe.com/api/subscriptions/create>
 createStripeSubscription ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   CreateSubscription ->
@@ -69,6 +75,9 @@ createStripeSubscription ::
 createStripeSubscription params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (createStripeSubscriptionClient auth params) env
 
+-- | Delete a stripe subscription
+--
+-- <https://docs.stripe.com/api/subscriptions/delete>
 deleteStripeSubscription ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   StripeSubscriptionID ->
@@ -76,6 +85,9 @@ deleteStripeSubscription ::
 deleteStripeSubscription params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (deleteStripeSubscriptionClient auth params) env
 
+-- | Create a stripe customer
+--
+-- <https://docs.stripe.com/api/customers/create>
 createStripeCustomer ::
   ( MonadIO m,
     MonadReader r m,
@@ -87,6 +99,9 @@ createStripeCustomer ::
 createStripeCustomer params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (createStripeCustomerClient auth params) env
 
+-- | Create a stripe product
+--
+-- <https://docs.stripe.com/api/products/create>
 createStripeProduct ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   CreateProduct ->
@@ -94,6 +109,9 @@ createStripeProduct ::
 createStripeProduct params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (createStripeProductClient auth params) env
 
+-- | Get a stripe product
+--
+-- <https://docs.stripe.com/api/products/retrieve>
 getStripeProduct ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   StripeProductID ->
@@ -101,6 +119,9 @@ getStripeProduct ::
 getStripeProduct pid = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (getStripeProductClient auth pid) env
 
+-- | Create a stripe price
+--
+-- <https://docs.stripe.com/api/prices/create>
 createStripePrice ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   CreatePrice ->
@@ -108,6 +129,9 @@ createStripePrice ::
 createStripePrice params = withStripeAuth $ \(env, auth) ->
   liftIO $ runClientM (createStripePriceClient auth params) env
 
+-- | Get a stripe price
+--
+-- <https://docs.stripe.com/api/prices/retrieve>
 getStripePrice ::
   (MonadReader r m, HasType StripeEnv r, HasType StripeAPIKey r, MonadIO m) =>
   StripePriceID ->

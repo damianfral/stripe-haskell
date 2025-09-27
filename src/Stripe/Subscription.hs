@@ -31,6 +31,9 @@ import Stripe.Checkout (LineItem (price, quantity))
 import Stripe.Customer (StripeCustomerID)
 import Web.FormUrlEncoded
 
+-- | The status of a Stripe Subscription.
+--
+-- <https://docs.stripe.com/api/subscriptions/object#subscription_object-status>
 data SubscriptionStatus
   = -- | the initial payment attempt failed
     SubscriptionStatusIncomplete
@@ -135,6 +138,9 @@ instance SQL.ToField SubscriptionStatus where
     SubscriptionStatusUnpaid -> SQL.toField @Text "SubscriptionStatusUnpaid"
     SubscriptionStatusPaused -> SQL.toField @Text "SubscriptionStatusPaused"
 
+-- | The ID of a Stripe Subscription.
+--
+-- <https://docs.stripe.com/api/subscriptions/object#subscription_object-id>
 newtype StripeSubscriptionID = StripeSubscriptionID
   {unStripeSubscriptionId :: Text}
   deriving (Show, Eq, Generic)
@@ -147,6 +153,9 @@ instance GenValid StripeSubscriptionID
 
 instance Validity StripeSubscriptionID
 
+-- | Parameters for creating a Subscription.
+--
+-- <https://docs.stripe.com/api/subscriptions/create>
 data CreateSubscription = CreateSubscription
   { createSubscriptionCustomer :: StripeCustomerID,
     createSubscriptionItems :: LineItem
@@ -163,6 +172,7 @@ instance ToForm CreateSubscription where
       ("items[0][quantity]", toQueryParam $ quantity createSubscriptionItems)
     ]
 
+-- | A wrapper around UTCTime to handle Stripe's epoch timestamps.
 newtype DateTime = DateTime {unDateTime :: UTCTime}
   deriving newtype (Validity, GenValid, PG.ToField, PG.FromField)
   deriving (Generic, Show, Eq)
@@ -173,6 +183,9 @@ instance FromJSON DateTime where
 instance ToJSON DateTime where
   toJSON = toJSON @Int . (round . utcTimeToPOSIXSeconds . unDateTime)
 
+-- | The Stripe Subscription object.
+--
+-- <https://docs.stripe.com/api/subscriptions/object>
 data StripeSubscription = StripeSubscription
   { stripeSubscriptionId :: StripeSubscriptionID,
     stripeSubscriptionCustomer :: StripeCustomerID,

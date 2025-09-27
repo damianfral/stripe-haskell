@@ -27,6 +27,9 @@ import Stripe.Auth
 import Stripe.Product hiding (toFormArray, toFormObject)
 import Web.FormUrlEncoded (ToForm (..))
 
+-- | The ID of a Stripe Price.
+--
+-- <https://docs.stripe.com/api/prices/object#price_object-id>
 newtype StripePriceID = StripePriceID {unStripePriceID :: Text}
   deriving newtype (FromJSON, ToJSON, ToHttpApiData)
   deriving stock (Show, Eq, Generic)
@@ -35,7 +38,9 @@ instance Validity StripePriceID
 
 instance GenValid StripePriceID
 
--- https://stripe.com/docs/api/prices/object
+-- | The Stripe Price object.
+--
+-- <https://docs.stripe.com/api/prices/object>
 data StripePrice = StripePrice
   { stripePriceId :: StripePriceID,
     stripePriceActive :: Bool,
@@ -81,6 +86,10 @@ instance ToJSON StripePrice where
         }
 
 -- https://stripe.com/docs/api/prices/create
+
+-- | Parameters for creating a Price.
+--
+-- <https://docs.stripe.com/api/prices/create>
 data CreatePrice = CreatePrice
   { createPriceCurrency :: Text,
     createPriceProduct :: StripeProductID,

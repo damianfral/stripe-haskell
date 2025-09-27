@@ -23,6 +23,9 @@ import Stripe.Auth
 import Stripe.Customer
 import Web.FormUrlEncoded
 
+-- | The mode of the Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/create#create_checkout_session-mode>
 data CheckoutMode = CheckoutPayment | CheckoutSubscription | CheckoutSetup
   deriving (Show, Generic)
 
@@ -42,10 +45,16 @@ instance ToJSON CheckoutMode where
   toJSON CheckoutSubscription = String "subscription"
   toJSON CheckoutSetup = String "setup"
 
+-- | The ID of a Stripe Price object.
+--
+-- <https://docs.stripe.com/api/prices/object#price_object-id>
 newtype PriceID = PriceID {unPriceID :: Text}
   deriving (Show)
   deriving newtype (ToJSON, FromJSON, ToHttpApiData)
 
+-- | A line item for a Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/create#create_checkout_session-line_items>
 data LineItem = LineItem
   { price :: PriceID,
     quantity :: Int
@@ -56,6 +65,9 @@ instance ToForm LineItem
 
 instance ToJSON LineItem
 
+-- | The ID of a Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/object#checkout_session_object-id>
 newtype CheckoutSessionID = CheckoutSessionID {unCheckoutSessionId :: Text}
   deriving (Generic, Show, Eq)
   deriving newtype (ToJSON, FromJSON)
@@ -64,6 +76,9 @@ instance GenValid CheckoutSessionID
 
 instance Validity CheckoutSessionID
 
+-- | Parameters for creating a Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/create>
 data CreateCheckoutSession = CreateCheckoutSession
   { successUrl :: Text,
     cancelUrl :: Text,
@@ -105,6 +120,9 @@ instance ToForm CreateCheckoutSession where
         CheckoutSetup -> [("currency", "USD")]
         _ -> toForm $ lineItemsToForm lineItems
 
+-- | The Checkout Session object.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/object>
 data CheckoutSession = CheckoutSession
   { checkoutSessionId :: CheckoutSessionID,
     checkoutSessionCustomer :: StripeCustomerID,
@@ -123,6 +141,9 @@ instance GenValid CheckoutSession
 
 instance Validity CheckoutSession
 
+-- | The payment status of a Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/object#checkout_session_object-payment_status>
 data PaymentStatus = Paid | Unpaid | NoPaymentRequired
   deriving (Generic, Show, Eq)
 

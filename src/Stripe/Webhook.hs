@@ -45,6 +45,9 @@ import Stripe.Event
 type WebhookSignatureHeader =
   Header' '[Required] "Stripe-Signature" StripeSignature
 
+-- | A Servant combinator that expects a request body signed with a Stripe
+-- webhook signature. It verifies the signature before passing the body to the
+-- handler.
 data
   StripeSignedReqBody
     (mods :: [Type])
@@ -56,6 +59,9 @@ type StripeWebhookAPI =
   StripeSignedReqBody '[Required] '[JSON] StripeEvent
     :> Post '[JSON] NoContent
 
+-- | A newtype wrapper for a Stripe webhook signing secret.
+--
+-- <https://stripe.com/docs/webhooks/signatures>
 newtype StripeWebhookSecret = StripeWebhookSecret {unStripeWebhookSecret :: Text}
   deriving (Show, Eq, Generic)
   deriving newtype (FromJSON, ToJSON)
@@ -136,7 +142,8 @@ instance
                 delayedFailFatal err401 {errReasonPhrase = "Invalid signature"}
 
 -- | Verify a Stripe webhook signature.
--- See https://stripe.com/docs/webhooks/signatures
+--
+-- <https://stripe.com/docs/webhooks/signatures>
 isValidSignature ::
   -- | The signing secret.
   StripeWebhookSecret ->
@@ -165,6 +172,7 @@ isValidSignature secret body sigHeader = do
                 $ constTimeEq (T.encodeUtf8 v1) (T.encodeUtf8 expectedSignature)
     _ -> pure False
 
+-- | Parse the `Stripe-Signature` header value into a map of keys to values.
 parseSignatureHeader :: Text -> Map.Map Text Text
 parseSignatureHeader = Map.fromList . mapMaybe toPair . T.splitOn ","
   where
@@ -173,6 +181,7 @@ parseSignatureHeader = Map.fromList . mapMaybe toPair . T.splitOn ","
       [k, v] -> Just (k, v)
       _ -> Nothing
 
+-- | Compute the HMAC-SHA256 signature for a Stripe webhook payload.
 computeSignature :: StripeWebhookSecret -> UTCTime -> ByteString -> Text
 computeSignature secret timestamp body =
   let posixTime :: POSIXTime = utcTimeToPOSIXSeconds timestamp

@@ -24,6 +24,9 @@ import Servant
 import Stripe.Auth (StripeAuthHeader)
 import Web.FormUrlEncoded
 
+-- | The ID of a Stripe Customer.
+--
+-- <https://docs.stripe.com/api/customers/object#customer_object-id>
 newtype StripeCustomerID = StripeCustomerID {unStripeCustomerID :: Text}
   deriving (Show, Eq, Generic)
   deriving newtype (ToJSON, FromJSON)
@@ -35,6 +38,9 @@ instance GenValid StripeCustomerID
 
 instance Validity StripeCustomerID
 
+-- | Parameters for creating a Customer.
+--
+-- <https://docs.stripe.com/api/customers/create>
 newtype CreateCustomer = CreateCustomer {createCustomerEmail :: EmailAddress}
   deriving (Generic, Show)
 
@@ -45,6 +51,9 @@ instance ToForm CreateCustomer where
   toForm CreateCustomer {..} =
     [("email", unEmailAddress createCustomerEmail)]
 
+-- | The Stripe Customer object.
+--
+-- <https://docs.stripe.com/api/customers/object>
 newtype StripeCustomer = StripeCustomer {stripeCustomerId :: StripeCustomerID}
   deriving (Generic, Show, Eq)
 

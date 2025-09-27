@@ -27,6 +27,12 @@ import Stripe.Event (StripeEvent)
 import Stripe.Webhook (StripeWebhookSecret, computeSignature)
 import qualified Stripe.Webhook as Stripe
 
+-- | This instance allows a Servant client to send a request with a Stripe
+-- webhook signature. The client function takes the webhook secret, the current
+-- timestamp, and the request body. It computes the signature, adds the
+-- `Stripe-Signature` header to the request, and sets the request body.
+--
+-- <https://stripe.com/docs/webhooks/signatures>
 instance
   (HasClient m sub, MimeRender ct a) =>
   HasClient m (Stripe.StripeSignedReqBody mods (ct ': cts) a :> sub)
@@ -45,5 +51,7 @@ instance
   hoistClientMonad pm _ nt f a now =
     hoistClientMonad pm (Proxy @sub) nt . f a now
 
+-- | This instance provides a `MimeRender` for `StripeEvent` and `JSON`.
+-- It's a straightforward use of `Aeson.encode`.
 instance MimeRender JSON StripeEvent where
   mimeRender _ = encode
