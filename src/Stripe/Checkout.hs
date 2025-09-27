@@ -16,6 +16,10 @@ import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
 import Data.GenValidity
+import qualified Database.PostgreSQL.Simple.FromField as PG
+import qualified Database.PostgreSQL.Simple.ToField as PG
+import qualified Database.SQLite.Simple.FromField as SQL
+import qualified Database.SQLite.Simple.ToField as SQL
 import GHC.Generics
 import Relude
 import Servant.API
@@ -72,6 +76,8 @@ instance ToJSON LineItem
 newtype CheckoutSessionID = CheckoutSessionID {unCheckoutSessionId :: Text}
   deriving (Generic, Show, Eq)
   deriving newtype (ToJSON, FromJSON)
+  deriving newtype (PG.ToField, PG.FromField)
+  deriving newtype (SQL.ToField, SQL.FromField)
 
 instance GenValid CheckoutSessionID
 

@@ -12,6 +12,10 @@ import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
 import Data.GenValidity
 import Data.GenValidity.Text ()
+import qualified Database.PostgreSQL.Simple.FromField as PG
+import qualified Database.PostgreSQL.Simple.ToField as PG
+import qualified Database.SQLite.Simple.FromField as SQL
+import qualified Database.SQLite.Simple.ToField as SQL
 import GHC.Generics
 import Relude
 import Stripe.Customer (StripeCustomerID)
@@ -22,6 +26,8 @@ import Stripe.Customer (StripeCustomerID)
 newtype PaymentIntentID = PaymentIntentID {unPaymentIntentID :: Text}
   deriving (Show, Eq, Generic)
   deriving newtype (ToJSON, FromJSON)
+  deriving newtype (PG.ToField, PG.FromField)
+  deriving newtype (SQL.ToField, SQL.FromField)
 
 instance Validity PaymentIntentID
 
