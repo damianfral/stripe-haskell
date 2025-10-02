@@ -6,6 +6,9 @@ module Data.EmailAddress (EmailAddress, emailToText) where
 import Data.Aeson
 import Data.GenValidity
 import Data.GenValidity.ByteString ()
+import Database.SQLite.Simple.FromField
+import qualified Database.SQLite.Simple.FromField as SQL
+import qualified Database.SQLite.Simple.ToField as SQL
 import Relude
 import Servant (ToHttpApiData)
 import Servant.API (ToHttpApiData (toUrlPiece))
@@ -29,3 +32,13 @@ instance ToHttpApiData EmailAddress where
 
 emailToText :: EmailAddress -> Text
 emailToText = decodeUtf8With lenientDecode . toByteString
+
+instance SQL.FromField EmailAddress where
+  fromField =
+    fromField >=> \bs ->
+      case E.validate bs of
+        Left e -> fail e
+        Right email -> pure email
+
+instance SQL.ToField EmailAddress where
+  toField = SQL.toField . toByteString
