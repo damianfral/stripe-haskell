@@ -12,7 +12,7 @@ module Stripe.Customer where
 
 import Data.Aeson
 import Data.Aeson.Helpers
-import Data.EmailAddress (EmailAddress (unEmailAddress))
+import Data.EmailAddress
 import Data.GenValidity
 import Data.GenValidity.Text ()
 import qualified Database.PostgreSQL.Simple.FromField as PG
@@ -49,7 +49,7 @@ instance ToJSON CreateCustomer where
 
 instance ToForm CreateCustomer where
   toForm CreateCustomer {..} =
-    [("email", unEmailAddress createCustomerEmail)]
+    [("email", emailToText createCustomerEmail)]
 
 -- | The Stripe Customer object.
 --

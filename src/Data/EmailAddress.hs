@@ -1,18 +1,31 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE TypeApplications #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
-module Data.EmailAddress where
+module Data.EmailAddress (EmailAddress, emailToText) where
 
 import Data.Aeson
 import Data.GenValidity
-import Data.GenValidity.Text ()
-import qualified Database.PostgreSQL.Simple.FromField as PG
-import qualified Database.PostgreSQL.Simple.ToField as PG
+import Data.GenValidity.ByteString ()
 import Relude
 import Servant (ToHttpApiData)
+import Servant.API (ToHttpApiData (toUrlPiece))
+import Text.Email.Validate as E
 
-newtype EmailAddress = EmailAddress {unEmailAddress :: Text}
-  deriving newtype (Show, PG.ToField, PG.FromField, ToJSON, FromJSON, ToHttpApiData, Eq, IsString)
-  deriving (Generic)
-  deriving newtype (Validity, GenValid)
+instance Validity EmailAddress
+
+instance GenValid EmailAddress
+
+instance ToJSON EmailAddress where
+  toJSON = toJSON @Text . decodeUtf8With lenientDecode . toByteString
+
+instance FromJSON EmailAddress where
+  parseJSON = withText "EmailAddress" $ \t ->
+    case E.validate $ encodeUtf8 t of
+      Left e -> fail e
+      Right v -> pure v
+
+instance ToHttpApiData EmailAddress where
+  toUrlPiece = emailToText
+
+emailToText :: EmailAddress -> Text
+emailToText = decodeUtf8With lenientDecode . toByteString

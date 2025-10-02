@@ -12,9 +12,11 @@ dependencies:
   - case-insensitive
   - cryptonite
   - crypto-api
+  - email-validate
   - generic-lens
   - genvalidity
   - genvalidity-aeson
+  - genvalidity-bytestring
   - genvalidity-containers
   - genvalidity-text
   - genvalidity-time
