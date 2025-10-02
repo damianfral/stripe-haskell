@@ -5,6 +5,7 @@
 module StripeSpec (spec) where
 
 import qualified Data.Aeson as JSON
+import Data.EmailAddress
 import Data.Time.Clock.POSIX
 import Relude
 import Stripe.Checkout
@@ -79,6 +80,8 @@ spec = do
       let timestamp = show @Text @Int $ round now
           header = "t=" <> timestamp
       liftIO (isValidSignature secret body header) `shouldReturn` False
+
+  describe "EmailAddress" $ jsonSpec @EmailAddress
 
   describe "Stripe Subscription" $ do
     jsonSpec @StripeSubscription
