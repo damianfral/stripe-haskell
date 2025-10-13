@@ -88,8 +88,8 @@ instance Validity CheckoutSessionID
 --
 -- <https://docs.stripe.com/api/checkout/sessions/create>
 data CreateCheckoutSession = CreateCheckoutSession
-  { successUrl :: Text,
-    cancelUrl :: Text,
+  { successUrl :: URI,
+    cancelUrl :: URI,
     mode :: CheckoutMode,
     lineItems :: [LineItem],
     -- | The ID of an existing Customer to use for this Session.
@@ -117,8 +117,8 @@ lineItemsToForm items =
 
 instance ToForm CreateCheckoutSession where
   toForm CreateCheckoutSession {..} =
-    [ ("success_url", successUrl),
-      ("cancel_url", cancelUrl),
+    [ ("success_url", show successUrl),
+      ("cancel_url", show cancelUrl),
       ("mode", toQueryParam mode)
     ]
       <> maybe [] (\cid -> [("customer", toQueryParam cid)]) customerId
