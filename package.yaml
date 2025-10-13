@@ -10,8 +10,8 @@ dependencies:
   - aeson-casing
   - base
   - case-insensitive
-  - cryptonite
   - crypto-api
+  - cryptonite
   - email-validate
   - generic-lens
   - genvalidity
@@ -23,7 +23,9 @@ dependencies:
   - http-api-data
   - http-media
   - http-types
+  - iproute
   - memory
+  - network-uri
   - postgresql-simple
   - QuickCheck
   - relude

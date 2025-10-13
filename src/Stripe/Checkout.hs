@@ -16,6 +16,7 @@ import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
 import Data.GenValidity
+import Data.GenValidity.CustomURI ()
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
 import qualified Database.SQLite.Simple.FromField as SQL
@@ -134,7 +135,7 @@ data CheckoutSession = CheckoutSession
   { checkoutSessionId :: CheckoutSessionID,
     checkoutSessionCustomer :: StripeCustomerID,
     checkoutSessionPaymentStatus :: PaymentStatus,
-    checkoutSessionUrl :: Maybe Text,
+    checkoutSessionUrl :: Maybe URI,
     checkoutSessionPaymentIntent :: Maybe PaymentIntentID
   }
   deriving (Show, Generic, Eq)
