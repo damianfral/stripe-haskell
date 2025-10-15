@@ -15,6 +15,7 @@ module Stripe.Checkout where
 import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
+import Data.EmailAddress (EmailAddress)
 import Data.GenValidity
 import Data.GenValidity.CustomURI ()
 import qualified Database.PostgreSQL.Simple.FromField as PG
@@ -95,6 +96,7 @@ data CreateCheckoutSession = CreateCheckoutSession
     -- | The ID of an existing Customer to use for this Session.
     -- If none is provided, a new Customer will be created.
     customerId :: Maybe StripeCustomerID,
+    customerEmail :: Maybe EmailAddress,
     -- | The ID of the subscription to update.
     subscription :: Maybe Text
   }
@@ -122,6 +124,7 @@ instance ToForm CreateCheckoutSession where
       ("mode", toQueryParam mode)
     ]
       <> maybe [] (\cid -> [("customer", toQueryParam cid)]) customerId
+      <> maybe [] (\cid -> [("customer_email", toQueryParam cid)]) customerEmail
       <> maybe [] (\sub -> [("subscription", sub)]) subscription
       -- Tricky
       <> case mode of
