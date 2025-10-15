@@ -133,7 +133,7 @@ instance ToForm CreateCheckoutSession where
 -- <https://docs.stripe.com/api/checkout/sessions/object>
 data CheckoutSession = CheckoutSession
   { checkoutSessionId :: CheckoutSessionID,
-    checkoutSessionCustomer :: StripeCustomerID,
+    checkoutSessionCustomer :: Maybe StripeCustomerID,
     checkoutSessionPaymentStatus :: PaymentStatus,
     checkoutSessionUrl :: Maybe URI,
     checkoutSessionPaymentIntent :: Maybe PaymentIntentID
