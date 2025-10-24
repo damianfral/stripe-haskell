@@ -31,8 +31,8 @@ import Web.FormUrlEncoded (ToForm (..))
 --
 -- <https://docs.stripe.com/api/prices/object#price_object-id>
 newtype StripePriceID = StripePriceID {unStripePriceID :: Text}
-  deriving newtype (FromJSON, ToJSON, ToHttpApiData)
-  deriving stock (Show, Eq, Generic)
+  deriving newtype (FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+  deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity StripePriceID
 

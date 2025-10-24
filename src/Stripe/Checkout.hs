@@ -28,6 +28,7 @@ import Servant.API
 import Stripe.Auth
 import Stripe.Customer
 import Stripe.PaymentIntent (PaymentIntentID)
+import Stripe.Price
 import Web.FormUrlEncoded
 
 -- | The mode of the Checkout Session.
@@ -52,18 +53,11 @@ instance ToJSON CheckoutMode where
   toJSON CheckoutSubscription = String "subscription"
   toJSON CheckoutSetup = String "setup"
 
--- | The ID of a Stripe Price object.
---
--- <https://docs.stripe.com/api/prices/object#price_object-id>
-newtype PriceID = PriceID {unPriceID :: Text}
-  deriving (Show)
-  deriving newtype (ToJSON, FromJSON, ToHttpApiData)
-
 -- | A line item for a Checkout Session.
 --
 -- <https://docs.stripe.com/api/checkout/sessions/create#create_checkout_session-line_items>
 data LineItem = LineItem
-  { price :: PriceID,
+  { price :: StripePriceID,
     quantity :: Int
   }
   deriving (Show, Generic)
