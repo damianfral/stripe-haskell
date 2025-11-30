@@ -21,6 +21,8 @@ import Data.Char (toLower)
 import Data.GenValidity
 import Data.Text (pack)
 import Data.Time.Clock.POSIX (POSIXTime)
+import Database.SQLite.Simple.FromField (FromField)
+import Database.SQLite.Simple.ToField (ToField)
 import Relude
 import Servant
 import Stripe.Auth
@@ -32,6 +34,7 @@ import Web.FormUrlEncoded (ToForm (..))
 -- <https://docs.stripe.com/api/prices/object#price_object-id>
 newtype StripePriceID = StripePriceID {unStripePriceID :: Text}
   deriving newtype (FromJSON, ToJSON, ToHttpApiData, FromHttpApiData)
+  deriving newtype (FromField, ToField)
   deriving stock (Show, Eq, Ord, Generic)
 
 instance Validity StripePriceID
