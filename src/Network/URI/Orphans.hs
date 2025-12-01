@@ -4,7 +4,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Data.GenValidity.CustomURI where
+module Network.URI.Orphans where
 
 import Data.Char as Char
 import Data.GenValidity

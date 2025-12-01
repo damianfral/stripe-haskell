@@ -18,7 +18,6 @@ import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
 import Data.EmailAddress (EmailAddress)
 import Data.GenValidity
-import Data.GenValidity.CustomURI ()
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
 import Database.SQLite.Simple
@@ -26,6 +25,7 @@ import qualified Database.SQLite.Simple.FromField as SQL
 import qualified Database.SQLite.Simple.Ok as SQL
 import qualified Database.SQLite.Simple.ToField as SQL
 import GHC.Generics
+import Network.URI.Orphans ()
 import Relude
 import Servant.API
 import Stripe.Auth
