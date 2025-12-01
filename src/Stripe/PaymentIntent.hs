@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Stripe.PaymentIntent where
@@ -59,6 +60,21 @@ instance FromJSON PaymentIntentStatus where
 
 instance ToJSON PaymentIntentStatus where
   toJSON = toJSON . snakeCase . show
+
+instance SQL.FromField PaymentIntentStatus where
+  fromField =
+    SQL.fromField @Text >=> \case
+      "canceled" -> pure Canceled
+      "processing" -> pure Processing
+      "requires_action" -> pure RequiresAction
+      "requires_capture" -> pure RequiresCapture
+      "requires_confirmation" -> pure RequiresConfirmation
+      "requires_payment_method" -> pure RequiresPaymentMethod
+      "succeeded" -> pure Succeeded
+      s -> fail $ "Cannot parse PaymentIntentStatus: " <> toString s
+
+instance SQL.ToField PaymentIntentStatus where
+  toField = SQL.toField . snakeCase . show
 
 instance Validity PaymentIntentStatus
 
