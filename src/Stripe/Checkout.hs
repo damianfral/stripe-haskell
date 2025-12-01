@@ -7,6 +7,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
@@ -20,7 +21,9 @@ import Data.GenValidity
 import Data.GenValidity.CustomURI ()
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
+import Database.SQLite.Simple
 import qualified Database.SQLite.Simple.FromField as SQL
+import qualified Database.SQLite.Simple.Ok as SQL
 import qualified Database.SQLite.Simple.ToField as SQL
 import GHC.Generics
 import Relude
@@ -147,6 +150,10 @@ instance GenValid CheckoutSession
 
 instance Validity CheckoutSession
 
+instance FromRow CheckoutSession
+
+instance ToRow CheckoutSession
+
 -- | The payment status of a Checkout Session.
 --
 -- <https://docs.stripe.com/api/checkout/sessions/object#checkout_session_object-payment_status>
@@ -162,6 +169,17 @@ instance FromJSON PaymentStatus where
 
 instance ToJSON PaymentStatus where
   toJSON = toJSON . snakeCase . show
+
+instance SQL.FromField PaymentStatus where
+  fromField =
+    SQL.fromField @Text >=> \case
+      "paid" -> SQL.Ok Paid
+      "unpaid" -> SQL.Ok Unpaid
+      "no_payment_required" -> SQL.Ok NoPaymentRequired
+      s -> fail $ "Cannot parse PaymentStatus " <> toString s
+
+instance SQL.ToField PaymentStatus where
+  toField = SQL.toField . snakeCase . show
 
 instance GenValid PaymentStatus
 

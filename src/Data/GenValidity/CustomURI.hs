@@ -1,5 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
@@ -10,6 +11,9 @@ import Data.GenValidity
 import Data.GenValidity.Text ()
 import Data.IP
 import Data.Word
+import Database.SQLite.Simple.FromField
+import Database.SQLite.Simple.Ok
+import Database.SQLite.Simple.ToField (ToField (toField))
 import Network.URI
 import Relude
 import Test.QuickCheck
@@ -17,6 +21,16 @@ import Text.Printf
 
 dangerousURIToString :: URI -> String
 dangerousURIToString u = uriToString id u ""
+
+instance FromField URI where
+  fromField =
+    fromField @String >=> \str ->
+      case parseURI str of
+        Nothing -> fail $ "Could not parse URI " <> str
+        Just v -> Ok v
+
+instance ToField URI where
+  toField = toField @String . show
 
 instance Validity URI where
   validate uri = check condition ("Could not parse " <> show uri)
