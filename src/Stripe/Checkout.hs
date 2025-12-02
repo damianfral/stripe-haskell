@@ -18,6 +18,7 @@ import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
 import Data.EmailAddress (EmailAddress)
 import Data.GenValidity
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
 import Database.SQLite.Simple
@@ -78,7 +79,10 @@ newtype CheckoutSessionID = CheckoutSessionID {unCheckoutSessionId :: Text}
   deriving newtype (PG.ToField, PG.FromField)
   deriving newtype (SQL.ToField, SQL.FromField)
 
-instance GenValid CheckoutSessionID
+instance GenValid CheckoutSessionID where
+  genValid = CheckoutSessionID . ("cs_" <>) <$> genValid
+  shrinkValid (CheckoutSessionID t) =
+    [CheckoutSessionID s | s <- shrinkValid t, "cs_" `T.isPrefixOf` s]
 
 instance Validity CheckoutSessionID
 

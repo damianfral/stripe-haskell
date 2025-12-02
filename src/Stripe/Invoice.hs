@@ -12,6 +12,8 @@ module Stripe.Invoice where
 import Data.Aeson
 import Data.Aeson.Helpers
 import Data.GenValidity
+import Data.GenValidity.Text ()
+import qualified Data.Text as T
 import Relude
 import Stripe.Customer (StripeCustomerID)
 import Stripe.Subscription (StripeSubscriptionID)
@@ -22,7 +24,10 @@ newtype StripeInvoiceID = StripeInvoiceID {unStripeInvoiceID :: Text}
 
 instance Validity StripeInvoiceID
 
-instance GenValid StripeInvoiceID
+instance GenValid StripeInvoiceID where
+  genValid = StripeInvoiceID . ("in_" <>) <$> genValid
+  shrinkValid (StripeInvoiceID t) =
+    [StripeInvoiceID s | s <- shrinkValid t, "in_" `T.isPrefixOf` s]
 
 data InvoiceStatus
   = InvoiceStatusDraft

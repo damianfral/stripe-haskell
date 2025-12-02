@@ -21,6 +21,7 @@ import Data.GenValidity
 import Data.GenValidity.Aeson ()
 import Data.GenValidity.Time ()
 import Data.Text (pack)
+import qualified Data.Text as T
 import Data.Time.Clock.POSIX (POSIXTime)
 import Relude
 import Servant
@@ -36,7 +37,10 @@ newtype StripeProductID = StripeProductID {unStripeProductID :: Text}
 
 instance Validity StripeProductID
 
-instance GenValid StripeProductID
+instance GenValid StripeProductID where
+  genValid = StripeProductID . ("prod_" <>) <$> genValid
+  shrinkValid (StripeProductID t) =
+    [StripeProductID s | s <- shrinkValid t, "prod_" `T.isPrefixOf` s]
 
 -- | The dimensions of a product package.
 --

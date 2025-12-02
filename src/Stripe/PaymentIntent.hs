@@ -13,6 +13,7 @@ import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
 import Data.GenValidity
 import Data.GenValidity.Text ()
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
 import qualified Database.SQLite.Simple.FromField as SQL
@@ -32,7 +33,10 @@ newtype PaymentIntentID = PaymentIntentID {unPaymentIntentID :: Text}
 
 instance Validity PaymentIntentID
 
-instance GenValid PaymentIntentID
+instance GenValid PaymentIntentID where
+  genValid = PaymentIntentID . ("pi_" <>) <$> genValid
+  shrinkValid (PaymentIntentID t) =
+    [PaymentIntentID s | s <- shrinkValid t, "pi_" `T.isPrefixOf` s]
 
 -- | The status of a Payment Intent.
 --

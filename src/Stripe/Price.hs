@@ -19,7 +19,9 @@ import Data.Aeson.Casing (snakeCase)
 import qualified Data.Aeson.KeyMap as KeyMap
 import Data.Char (toLower)
 import Data.GenValidity
+import Data.GenValidity.Text ()
 import Data.Text (pack)
+import qualified Data.Text as T
 import Data.Time.Clock.POSIX (POSIXTime)
 import Database.SQLite.Simple.FromField (FromField)
 import Database.SQLite.Simple.ToField (ToField)
@@ -39,7 +41,10 @@ newtype StripePriceID = StripePriceID {unStripePriceID :: Text}
 
 instance Validity StripePriceID
 
-instance GenValid StripePriceID
+instance GenValid StripePriceID where
+  genValid = StripePriceID . ("price_" <>) <$> genValid
+  shrinkValid (StripePriceID t) =
+    [StripePriceID s | s <- shrinkValid t, "price_" `T.isPrefixOf` s]
 
 -- | The Stripe Price object.
 --

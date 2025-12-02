@@ -15,6 +15,7 @@ import Data.Aeson.Helpers
 import Data.EmailAddress
 import Data.GenValidity
 import Data.GenValidity.Text ()
+import qualified Data.Text as T
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
 import qualified Database.SQLite.Simple.FromField as SQL
@@ -34,7 +35,10 @@ newtype StripeCustomerID = StripeCustomerID {unStripeCustomerID :: Text}
   deriving newtype (SQL.ToField, SQL.FromField)
   deriving newtype (ToHttpApiData)
 
-instance GenValid StripeCustomerID
+instance GenValid StripeCustomerID where
+  genValid = StripeCustomerID . ("cus_" <>) <$> genValid
+  shrinkValid (StripeCustomerID t) =
+    [StripeCustomerID s | s <- shrinkValid t, "cus_" `T.isPrefixOf` s]
 
 instance Validity StripeCustomerID
 

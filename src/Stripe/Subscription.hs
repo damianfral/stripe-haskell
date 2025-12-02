@@ -17,6 +17,7 @@ import Data.Aeson.Helpers
 import Data.GenValidity
 import Data.GenValidity.Text ()
 import Data.GenValidity.Time ()
+import qualified Data.Text as T
 import Data.Time (UTCTime)
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime, utcTimeToPOSIXSeconds)
 import qualified Database.PostgreSQL.Simple.FromField as PG
@@ -149,7 +150,10 @@ newtype StripeSubscriptionID = StripeSubscriptionID
   deriving newtype (SQL.ToField, SQL.FromField)
   deriving newtype (ToHttpApiData)
 
-instance GenValid StripeSubscriptionID
+instance GenValid StripeSubscriptionID where
+  genValid = StripeSubscriptionID . ("sub_" <>) <$> genValid
+  shrinkValid (StripeSubscriptionID t) =
+    [StripeSubscriptionID s | s <- shrinkValid t, "sub_" `T.isPrefixOf` s]
 
 instance Validity StripeSubscriptionID
 
