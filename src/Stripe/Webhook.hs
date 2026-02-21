@@ -53,7 +53,6 @@ data
     (mods :: [Type])
     (contentTypes :: [Type])
     (a :: Type)
-  deriving (Typeable)
 
 type StripeWebhookAPI =
   StripeSignedReqBody '[Required] '[JSON] StripeEvent
