@@ -21,6 +21,8 @@ import Test.QuickCheck.Gen (oneof)
 data StripeEventObject
   = -- | Occurs when a Checkout Session has been successfully completed.
     CheckoutSessionCompleted CheckoutSession
+  | -- | Occurs when a Checkout Session expires.
+    CheckoutSessionExpired CheckoutSession
   | -- | Occurs whenever a customer is signed up for a new subscription.
     CustomerSubscriptionCreated StripeSubscription
   | -- | Occurs whenever a subscription changes.
@@ -41,6 +43,7 @@ data StripeEventObject
 
 instance ToJSON StripeEventObject where
   toJSON (CheckoutSessionCompleted o) = toJSON o
+  toJSON (CheckoutSessionExpired o) = toJSON o
   toJSON (CustomerSubscriptionCreated o) = toJSON o
   toJSON (CustomerSubscriptionUpdated o) = toJSON o
   toJSON (CustomerSubscriptionDeleted o) = toJSON o
@@ -56,6 +59,7 @@ instance GenValid StripeEventObject where
   genValid =
     oneof
       [ CheckoutSessionCompleted <$> genValid,
+        CheckoutSessionExpired <$> genValid,
         CustomerSubscriptionCreated <$> genValid,
         CustomerSubscriptionUpdated <$> genValid,
         CustomerSubscriptionDeleted <$> genValid,

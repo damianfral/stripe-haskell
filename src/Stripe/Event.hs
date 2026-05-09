@@ -37,6 +37,7 @@ instance FromJSON StripeEvent where
     obj <- dat .: "object"
     eObject <- case (eType :: Text) of
       "checkout.session.completed" -> CheckoutSessionCompleted <$> parseJSON obj
+      "checkout.session.expired" -> CheckoutSessionExpired <$> parseJSON obj
       "customer.subscription.created" -> CustomerSubscriptionCreated <$> parseJSON obj
       "customer.subscription.updated" -> CustomerSubscriptionUpdated <$> parseJSON obj
       "customer.subscription.deleted" -> CustomerSubscriptionDeleted <$> parseJSON obj
@@ -54,6 +55,7 @@ instance ToJSON StripeEvent where
       [ "id" .= stripeEventId event,
         "type" .= case stripeEventObject event of
           CheckoutSessionCompleted _ -> "checkout.session.completed"
+          CheckoutSessionExpired _ -> "checkout.session.expired"
           CustomerSubscriptionCreated _ -> "customer.subscription.created"
           CustomerSubscriptionUpdated _ -> "customer.subscription.updated"
           CustomerSubscriptionDeleted _ -> "customer.subscription.deleted"
@@ -73,6 +75,7 @@ instance GenValid StripeEvent where
     stripeEventObject <-
       oneof
         [ CheckoutSessionCompleted <$> genValid,
+          CheckoutSessionExpired <$> genValid,
           CustomerSubscriptionCreated <$> genValid,
           CustomerSubscriptionUpdated <$> genValid,
           CustomerSubscriptionDeleted <$> genValid,
