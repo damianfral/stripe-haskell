@@ -56,10 +56,10 @@ emailToText = decodeUtf8With lenientDecode . toByteString
 
 instance SQL.FromField EmailAddress where
   fromField =
-    fromField >=> \bs ->
-      case E.validate bs of
+    fromField >=> \txt ->
+      case E.validate $ encodeUtf8 @Text txt of
         Left e -> fail e
         Right email -> pure email
 
 instance SQL.ToField EmailAddress where
-  toField = SQL.toField . toByteString
+  toField = SQL.toField . emailToText
