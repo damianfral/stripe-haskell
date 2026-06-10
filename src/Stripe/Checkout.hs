@@ -16,9 +16,12 @@ module Stripe.Checkout where
 import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
 import Data.Aeson.Helpers
+import Data.ByteString.Lazy (toStrict)
 import Data.EmailAddress (EmailAddress)
 import Data.GenValidity
+import Data.GenValidity.Text ()
 import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import qualified Database.PostgreSQL.Simple.FromField as PG
 import qualified Database.PostgreSQL.Simple.ToField as PG
 import Database.SQLite.Simple
@@ -27,7 +30,7 @@ import qualified Database.SQLite.Simple.Ok as SQL
 import qualified Database.SQLite.Simple.ToField as SQL
 import GHC.Generics
 import Network.URI.Orphans ()
-import Relude
+import Relude hiding (decodeUtf8, encodeUtf8, toStrict)
 import Servant.API
 import Stripe.Auth
 import Stripe.Customer
@@ -86,6 +89,85 @@ instance GenValid CheckoutSessionID where
 
 instance Validity CheckoutSessionID
 
+-- | The ID of a Coupon.
+--
+-- <https://docs.stripe.com/api/coupons/object#coupon_object-id>
+newtype CouponID = CouponID {unCouponID :: Text}
+  deriving (Generic, Show, Eq)
+  deriving newtype (ToJSON, FromJSON)
+  deriving newtype (ToHttpApiData, FromHttpApiData)
+  deriving newtype (PG.ToField, PG.FromField)
+  deriving newtype (SQL.ToField, SQL.FromField)
+
+instance GenValid CouponID where
+  genValid = CouponID . ("co_" <>) <$> genValid
+  shrinkValid (CouponID t) =
+    [CouponID s | s <- shrinkValid t, "co_" `T.isPrefixOf` s]
+
+instance Validity CouponID
+
+-- | The ID of a Promotion Code.
+--
+-- <https://docs.stripe.com/api/promotion_codes/object#promotion_code_object-id>
+newtype PromotionCodeID = PromotionCodeID {unPromotionCodeID :: Text}
+  deriving (Generic, Show, Eq)
+  deriving newtype (ToJSON, FromJSON)
+  deriving newtype (ToHttpApiData, FromHttpApiData)
+  deriving newtype (PG.ToField, PG.FromField)
+  deriving newtype (SQL.ToField, SQL.FromField)
+
+instance GenValid PromotionCodeID where
+  genValid = PromotionCodeID . ("promo_" <>) <$> genValid
+  shrinkValid (PromotionCodeID t) =
+    [PromotionCodeID s | s <- shrinkValid t, "promo_" `T.isPrefixOf` s]
+
+instance Validity PromotionCodeID
+
+-- | A discount to apply to a Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/create#create_checkout_session-discounts>
+data DiscountRequest = DiscountRequest
+  { discountCoupon :: Maybe CouponID,
+    discountPromotionCode :: Maybe PromotionCodeID
+  }
+  deriving (Show, Generic)
+
+instance GenValid DiscountRequest
+
+instance Validity DiscountRequest
+
+instance FromJSON DiscountRequest where
+  parseJSON = genericParseJSON $ customOptionsSnake "DiscountRequest"
+
+instance ToJSON DiscountRequest where
+  toJSON = genericToJSON $ customOptionsSnake "DiscountRequest"
+
+-- | The total details of a Checkout Session.
+--
+-- <https://docs.stripe.com/api/checkout/sessions/object#checkout_session_object-total_details>
+newtype TotalDetails = TotalDetails {totalDetailsAmountDiscount :: Maybe Int}
+  deriving (Show, Generic, Eq)
+
+instance FromJSON TotalDetails where
+  parseJSON = genericParseJSON $ customOptionsSnake "TotalDetails"
+
+instance ToJSON TotalDetails where
+  toJSON = genericToJSON $ customOptionsSnake "TotalDetails"
+
+instance GenValid TotalDetails
+
+instance Validity TotalDetails
+
+instance SQL.FromField TotalDetails where
+  fromField =
+    SQL.fromField @Text >=> \t ->
+      case eitherDecodeStrict (encodeUtf8 t) of
+        Right td -> pure td
+        Left e -> fail e
+
+instance SQL.ToField TotalDetails where
+  toField = SQL.toField . decodeUtf8 . toStrict . encode
+
 -- | Parameters for creating a Checkout Session.
 --
 -- <https://docs.stripe.com/api/checkout/sessions/create>
@@ -99,7 +181,11 @@ data CreateCheckoutSession = CreateCheckoutSession
     customerId :: Maybe StripeCustomerID,
     customerEmail :: Maybe EmailAddress,
     -- | The ID of the subscription to update.
-    subscription :: Maybe Text
+    subscription :: Maybe Text,
+    -- | If @True@, allow customers to enter a promotion code at checkout.
+    allowPromotionCodes :: Maybe Bool,
+    -- | Discounts to apply to this Session.
+    discounts :: Maybe [DiscountRequest]
   }
   deriving (Show, Generic)
 
@@ -118,6 +204,19 @@ lineItemsToForm items =
       [0 :: Int ..]
       items
 
+discountsToForm :: [DiscountRequest] -> [(Text, Text)]
+discountsToForm = concat . zipWith ixDiscountToTextPair [0 :: Int ..]
+  where
+    ixDiscountToTextPair i DiscountRequest {..} =
+      catMaybes
+        [ discountRequestToCoupon i <$> discountCoupon,
+          discountRequestToPromotionCode i <$> discountCoupon
+        ]
+    discountRequestToCoupon i c =
+      ("discounts[" <> show i <> "][coupon]", toQueryParam c)
+    discountRequestToPromotionCode i p =
+      ("discounts[" <> show i <> "][promotion_code]", toQueryParam p)
+
 instance ToForm CreateCheckoutSession where
   toForm CreateCheckoutSession {..} =
     [ ("success_url", show successUrl),
@@ -127,6 +226,8 @@ instance ToForm CreateCheckoutSession where
       <> maybe [] (\cid -> [("customer", toQueryParam cid)]) customerId
       <> maybe [] (\cid -> [("customer_email", toQueryParam cid)]) customerEmail
       <> maybe [] (\sub -> [("subscription", sub)]) subscription
+      <> maybe [] (\b -> [("allow_promotion_codes", if b then "true" else "false")]) allowPromotionCodes
+      <> maybe [] (toForm . discountsToForm) discounts
       -- Tricky
       <> case mode of
         CheckoutSetup -> [("currency", "USD")]
@@ -140,7 +241,9 @@ data CheckoutSession = CheckoutSession
     checkoutSessionCustomer :: Maybe StripeCustomerID,
     checkoutSessionPaymentStatus :: PaymentStatus,
     checkoutSessionUrl :: Maybe URI,
-    checkoutSessionPaymentIntent :: Maybe PaymentIntentID
+    checkoutSessionPaymentIntent :: Maybe PaymentIntentID,
+    checkoutSessionAllowPromotionCodes :: Maybe Bool,
+    checkoutSessionTotalDetails :: Maybe TotalDetails
   }
   deriving (Show, Generic, Eq)
 

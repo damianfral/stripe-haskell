@@ -116,7 +116,10 @@ spec = do
                 checkoutSessionCustomer = Just $ StripeCustomerID "cus_Na6dX7aXxi11N4",
                 checkoutSessionPaymentStatus = Unpaid,
                 checkoutSessionUrl = parseURI "https://checkout.stripe.com/c/pay/cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u#fidkdWxOYHwnPyd1blpxYHZxWjA0SDdPUW5JbmFMck1wMmx9N2BLZjFEfGRUNWhqTmJ%2FM2F8bUA2SDRySkFdUV81T1BSV0YxcWJcTUJcYW5rSzN3dzBLPUE0TzRKTTxzNFBjPWZEX1NKSkxpNTVjRjN8VHE0YicpJ2N3amhWYHdzYHcnP3F3cGApJ2lkfGpwcVF8dWAnPyd2bGtiaWBabHFgaCcpJ2BrZGdpYFVpZGZgbWppYWB3dic%2FcXdwYHgl",
-                checkoutSessionPaymentIntent = Nothing
+                checkoutSessionPaymentIntent = Nothing,
+                checkoutSessionAllowPromotionCodes = Nothing,
+                checkoutSessionTotalDetails =
+                  Just $ TotalDetails {totalDetailsAmountDiscount = Just 0}
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
 
@@ -183,11 +186,17 @@ spec = do
                 stripeEventObject =
                   CheckoutSessionCompleted
                     CheckoutSession
-                      { checkoutSessionId = CheckoutSessionID "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
-                        checkoutSessionCustomer = Just $ StripeCustomerID "cus_Na6dX7aXxi11N4",
+                      { checkoutSessionId =
+                          CheckoutSessionID "cs_test_a11YYufWQzNY63zpQ6QSNRQhkUpVph4WRmzW0zWJO2znZKdVujZ0N0S22u",
+                        checkoutSessionCustomer =
+                          Just $ StripeCustomerID "cus_Na6dX7aXxi11N4",
                         checkoutSessionPaymentStatus = Paid,
                         checkoutSessionUrl = Nothing,
-                        checkoutSessionPaymentIntent = Just (PaymentIntentID "pi_3MtwBwLkdIwHu7ix28a3tqPa")
+                        checkoutSessionPaymentIntent =
+                          Just $ PaymentIntentID "pi_3MtwBwLkdIwHu7ix28a3tqPa",
+                        checkoutSessionAllowPromotionCodes = Nothing,
+                        checkoutSessionTotalDetails =
+                          Just $ TotalDetails {totalDetailsAmountDiscount = Just 0}
                       }
               }
       JSON.eitherDecodeFileStrict filepath >>= flip shouldBe (pure expected)
