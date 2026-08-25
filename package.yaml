@@ -2,8 +2,7 @@
 name: stripe
 version: 1.0.0.0
 
-license: OtherLicense
-license-file: LICENSE
+license: MIT
 
 dependencies:
   - aeson
