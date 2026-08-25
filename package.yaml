@@ -1,5 +1,6 @@
 ---
 name: stripe
+synopsis: Client for the Stripe payment API
 version: 1.0.0.0
 
 license: MIT
